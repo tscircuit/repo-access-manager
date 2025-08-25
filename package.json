@@ -1,0 +1,15 @@
+{
+  "name": "tscircuit/repo-access-manager",
+  "description": "Manage repository access for teams",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/js-yaml": "^4.0.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.0.0",
+    "js-yaml": "^4.1.0"
+  }
+}

@@ -1,0 +1,22 @@
+name: Sync Repository Access
+on:
+  push:
+    branches: [main]
+    paths: ['repositories/**']
+
+jobs:
+  sync-access:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install
+      - name: Sync repository permissions
+        env:
+          GITHUB_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          ORG_NAME: ${{ github.repository_owner }}
+        run: bun scripts/sync-repository-access.ts
