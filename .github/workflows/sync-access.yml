@@ -2,7 +2,7 @@ name: Sync Repository Access
 on:
   push:
     branches: [main]
-    paths: ['repositories/repositories.yml']
+    paths: ['repositories.yml']
 
 jobs:
   sync-access:
