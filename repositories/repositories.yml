@@ -1,0 +1,5 @@
+repos:
+  - repository: svg.tscircuit.com
+    teams:
+      - staff
+    permission: push
