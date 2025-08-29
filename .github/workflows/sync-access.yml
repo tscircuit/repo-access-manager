@@ -2,7 +2,7 @@ name: Sync Repository Access
 on:
   push:
     branches: [main]
-    paths: ['repositories/**']
+    paths: ['repositories.yml']
 
 jobs:
   sync-access:
@@ -17,6 +17,6 @@ jobs:
         run: bun install
       - name: Sync repository permissions
         env:
-          GITHUB_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
           ORG_NAME: ${{ github.repository_owner }}
         run: bun scripts/sync-repository-access.ts

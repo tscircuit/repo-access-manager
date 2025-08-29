@@ -4,7 +4,7 @@ import path from 'path'
 import yaml from 'js-yaml'
 
 const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
+  auth: process.env.ADMIN_TOKEN,
 })
 
 const ORG_NAME = process.env.ORG_NAME || ''
@@ -40,24 +40,27 @@ async function syncRepositoryAccess() {
     process.exit(1)
   }
 
-  // Resolve from repo root so it works in CI
-  const reposDir = path.join(process.cwd(), 'repositories')
-  const configFiles = fs.readdirSync(reposDir).filter((file) => file.endsWith('.yml'))
+  // Single config file at repo root
+  const configPath = path.join(process.cwd(), 'repositories.yml')
+  if (!fs.existsSync(configPath)) {
+    console.error('repositories.yml not found at repo root')
+    process.exit(1)
+  }
+
+  const doc = yaml.load(fs.readFileSync(configPath, 'utf8')) as {
+    repos?: Array<{ repository: string; teams: string[]; permission: string }>
+  }
+
+  const repos = doc?.repos || []
+  if (!Array.isArray(repos) || repos.length === 0) {
+    console.error('repositories.yml has no repos defined under "repos"')
+    process.exit(1)
+  }
 
   let hadErrors = false
 
-  for (const configFile of configFiles) {
-    let config: { repository: string; teams: string[]; permission: string }
-    try {
-      config = yaml.load(
-        fs.readFileSync(path.join(reposDir, configFile), 'utf8'),
-      ) as { repository: string; teams: string[]; permission: string }
-    } catch (e) {
-      hadErrors = true
-      console.error(`❌ Failed to read/parse ${configFile}: ${(e as Error).message}`)
-      continue
-    }
-    const { repository, teams, permission } = config
+  for (const entry of repos) {
+    const { repository, teams, permission } = entry
     const normalizedPermission = normalizePermission(permission)
 
     console.log(`🔄 Processing ${repository}...`)

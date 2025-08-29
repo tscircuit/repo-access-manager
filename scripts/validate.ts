@@ -18,32 +18,36 @@ async function checkRepositoryExists() {
 
   const octokit = new Octokit({ auth: token })
 
-  const repositoriesDir = path.join(process.cwd(), 'repositories')
-  const configFiles = fs
-    .readdirSync(repositoriesDir)
-    .filter((file) => file.endsWith('.yml'))
+  const configPath = path.join(process.cwd(), 'repositories.yml')
+  if (!fs.existsSync(configPath)) {
+    console.error('repositories.yml not found at repo root')
+    process.exit(1)
+  }
+
+  const doc = yaml.load(fs.readFileSync(configPath, 'utf8')) as {
+    repos?: Array<{ repository: string; teams?: string[]; permission?: string }>
+  }
+
+  const repos = doc?.repos || []
+  if (!Array.isArray(repos) || repos.length === 0) {
+    console.error('repositories.yml has no repos defined under "repos"')
+    process.exit(1)
+  }
 
   let hadErrors = false
-
-  for (const configFile of configFiles) {
-    const configPath = path.join(repositoriesDir, configFile)
-    const config = yaml.load(fs.readFileSync(configPath, 'utf8')) as {
-      repository: string
-    }
-
-    const repositoryName = config?.repository
+  for (const entry of repos) {
+    const repositoryName = entry?.repository
     if (!repositoryName) {
       hadErrors = true
-      console.error(`✖ ${configFile}: missing required key "repository"`)
+      console.error('✖ An entry is missing required key "repository"')
       continue
     }
 
-    console.log(`\nValidating ${repositoryName} (${configFile})`)
+    console.log(`\nValidating ${repositoryName}`)
 
-    // Check repository exists
     try {
       await octokit.rest.repos.get({ owner: orgName, repo: repositoryName })
-      console.log(`  ✓ Repo exists`)
+      console.log('  ✓ Repo exists')
     } catch (e) {
       hadErrors = true
       console.error(`  ✖ Repo not found or inaccessible: ${orgName}/${repositoryName}`)
@@ -51,9 +55,7 @@ async function checkRepositoryExists() {
     }
   }
 
-  if (hadErrors) {
-    process.exit(1)
-  }
+  if (hadErrors) process.exit(1)
 }
 
 checkRepositoryExists().catch((e) => {
